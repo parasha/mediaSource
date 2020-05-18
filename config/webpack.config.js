@@ -35,10 +35,11 @@ const config = {
           options: {
             presets: ['@babel/preset-env'],
             plugins: [
-              ["@babel/plugin-transform-runtime", {
-                regenerator: true
-              }],
-              ["@babel/plugin-syntax-dynamic-import"],
+              "@babel/plugin-transform-runtime",
+              "@babel/plugin-syntax-dynamic-import",
+              "@babel/plugin-transform-arrow-functions", 
+              "@babel/plugin-proposal-class-properties",
+              "@babel/plugin-proposal-private-methods"
             ]
           },
         }

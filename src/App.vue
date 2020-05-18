@@ -1,15 +1,14 @@
 <template>
   <div id="page">
-    <img src="../assets/logo.png" />
-    <div class="title">video-blob</div>
     <video controls ref="videoVNode"></video>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from "vue";
+import Video from './common/js/video';
 
-var assetURL = "../assets/frag_bunny.mp4";
+var assetURL = "./assets/frag_bunny.mp4";
 // Need to be specific for Blink regarding codecs
 // ./mp4info frag_bunny.mp4 | grep Codec
 var mimeCodec = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
@@ -143,23 +142,25 @@ export default {
     const videoVNode = ref(null);
 
     onMounted(() => {
-      video = videoVNode.value;
-      for (var i = 0; i < totalSegments; ++i) requestedSegments[i] = false;
-      // 检查 mediaSource 的兼容性
-      if ("MediaSource" in window && MediaSource.isTypeSupported(mimeCodec)) {
-        // 创建 mediaSource 对象
-        mediaSource = new MediaSource();
-        // 获取当前文件的一个内存URL
-        videoVNode.value.src = URL.createObjectURL(mediaSource);
-        // 返回一个包含当前MediaSource状态的集合
-        // 它当前没有附着到一个media元素(closed)
-        // 或者已附着并准备接收SourceBuffer 对象 (open)
-        // 亦或者已附着但这个流已被MediaSource.endOfStream()关闭(ended.)
-        console.log(mediaSource.readyState); // closed
-        mediaSource.addEventListener("sourceopen", sourceOpen);
-      } else {
-        console.error("Unsupported MIME type or codec: ", mimeCodec);
-      }
+      // video = videoVNode.value;
+      // for (var i = 0; i < totalSegments; ++i) requestedSegments[i] = false;
+      // // 检查 mediaSource 的兼容性
+      // if ("MediaSource" in window && MediaSource.isTypeSupported(mimeCodec)) {
+      //   // 创建 mediaSource 对象
+      //   mediaSource = new MediaSource();
+      //   // 获取当前文件的一个内存URL
+      //   videoVNode.value.src = URL.createObjectURL(mediaSource);
+      //   // 返回一个包含当前MediaSource状态的集合
+      //   // 它当前没有附着到一个media元素(closed)
+      //   // 或者已附着并准备接收SourceBuffer 对象 (open)
+      //   // 亦或者已附着但这个流已被MediaSource.endOfStream()关闭(ended.)
+      //   console.log(mediaSource.readyState); // closed
+      //   mediaSource.addEventListener("sourceopen", sourceOpen);
+      // } else {
+      //   console.error("Unsupported MIME type or codec: ", mimeCodec);
+      // }
+      const video = new Video(videoVNode.value);
+      video.init('../assets/frag_bunny.mp4');
     });
 
     return {
