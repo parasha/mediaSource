@@ -1,8 +1,6 @@
 class video {
   video = null;
-  assetURL = "./assets/frag_bunny.mp4";
-  // Need to be specific for Blink regarding codecs
-  // ./mp4info frag_bunny.mp4 | grep Codec
+  assetURL = "";
   mimeCodec = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
   totalSegments = 5;
   segmentLength = 0;
@@ -115,8 +113,9 @@ class video {
         this.bytesFetched + this.segmentLength,
         this.appendSegment.bind(this)
       );
+    }else{
+      console.log(this.video.currentTime, currentSegment, this.segmentDuration);
     }
-    //console.log(this.video.currentTime, currentSegment, this.segmentDuration);
   }
 
   seek(e) {

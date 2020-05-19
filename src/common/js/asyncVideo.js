@@ -1,130 +1,128 @@
 class Video {
-  // 视频播放器
-  el = null;
-  // 视频格式
-  mimeCodec = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"';
-  // MediaSource 对象
-  #mediaSource = null;
-  // SourceBuffrt 对象
-  #sourceBuffer = null;
+  //  vide 标签
+  player = null;
   // 视频地址
-  #video_url = null;
-  // 视频分段个数
-  part_number = 10;
-  // 视频每一段的大小
-  #part_size = 0;
-  // 每一段视频的长度
-  #part_duration = 0;
-  // 当前播放的视频 index
-  #part_index = 0;
+  url = null;
+  // 视频格式
+  mimeCodec = null;
+  // 视频分成几段加载
+  part = 5;
+  // private
+  #mediasource = null;
+  #sourceBuffer = null;
+  // 视频基本信息
+  #media_info = {
+    size: 0,
+    duration: 0,
+  }
+  // 播放器信息
+  #player_info = {
+    part_size: 0,
+    start_bytes: 0,
+    part_duration: 0, // 每一段的时长
+    index: 0, // 当前播放的 index
+  }
   // 视频加载状态
-  #sourceBuffer_load_status = [];
+  #media_load_status = []
 
-  // 构造函数
-  constructor(dom_video, url) {
-    this.el = dom_video;
-    this.init(url);
-  }
-  // meidaSource 初始化
-  /**
-   * 
-   * @param {String} url 视频地址 
-   */
-  async init(url) {
-    this.#video_url = url;
-    // 创建一个 mediaSource 对象
-    this.#mediaSource = new MediaSource();
-    // 给 video 标签添加一个 blob
-    this.el.src = URL.createObjectURL(this.#mediaSource);
-    this.#mediaSource.addEventListener('sourceopen', async () => {
-      // 创建一个带有给定MIME类型的新的 SourceBuffer
-      // addSourceBuffer 需要 mediaSource 处于 open 状态
-      this.#sourceBuffer = this.#mediaSource.addSourceBuffer(this.mimeCodec);
-      this.#part_size = Math.round(await this.#getVideoSize() / this.part_number);
-      console.log('视频每一段的大小：', this.#part_size);
-      await this.#loadMediaData(0);
-      // 监听播放
-      this.el.addEventListener('timeupdate', this.#playListener.bind(this))
-      this.el.addEventListener('canplay', ()=>{
-        this.#part_duration = this.el.duration / this.part_number
+  constructor(video, url, mimeCodec = 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"') {
+    this.mimeCodec = mimeCodec;
+    if ('MediaSource' in window && MediaSource.isTypeSupported(this.mimeCodec)) {
+      this.player = video;
+      this.url = url;
+      // 创建 mediaSource 实例
+      this.#mediasource = new MediaSource();
+      this.player.src = URL.createObjectURL(this.#mediasource);
+      this.#mediasource.addEventListener('sourceopen', async () => {
+        // 添加 sourceBuffer 需要 mediaSource 处于 open 状态
+        this.#sourceBuffer = this.#mediasource.addSourceBuffer(this.mimeCodec);
+        // 视频信息
+        this.#media_info.size = await this.#getMediaBaaseInfo();
+        this.#player_info.part_size = this.#media_info.size / this.part;
+        this.player.addEventListener('canplay', () => {
+          this.#media_info.duration = this.player.duration;
+          this.#player_info.part_duration = this.#media_info.duration / this.part;
+        })
+        // 状态初始化
+        for (let index = 0; index < this.part; index++) {
+          this.#media_load_status[index] = false;
+        }
+        // 加载第一段视频
+        await this.#loadMediaData(0);
+        // 监听播放事件
+        this.player.addEventListener('timeupdate', this.#playListener.bind(this));
       })
-      console.log(this);
-    })
+    } else {
+      throw new Error('不受支持的 视频格式');
+    }
   }
-  // 获取视频基本信息: 视频大小
-  async #getVideoSize() {
+
+  // 获取基本信息: 视频大小，时长
+  #getMediaBaaseInfo() {
+    // 视频大小
     const xhr = new XMLHttpRequest();
-    xhr.open("head", this.#video_url);
+    xhr.open("head", this.url);
     return new Promise(res => {
-      xhr.onload = async function () {
+      xhr.onload = function () {
         res(xhr.getResponseHeader("content-length"));
       };
       xhr.send();
     })
   }
-  async #loadMediaData(index) {
-    const chunk = await this.#fetchMediaData(index)
-    console.log(chunk)
-    // 加载第一段视频
-    this.#sourceBuffer.appendBuffer(chunk);
-    console.log('appendBuffer', this);
-    // 保存一个加载状态，进度条拖动时使用
-    this.#sourceBuffer_load_status[index] = true;
+
+  #playListener() {
+    const loaded_duration = this.#player_info.index * this.#player_info.part_duration;
+    if (this.player.currentTime > 0.7 * loaded_duration) {
+      // 即将播放完，需要加载下一段
+      if (this.#havaAllLoad()) {
+        // 视频全部加载
+        if (this.#mediasource.readyState == 'open') {
+          console.log('stream end')
+          this.#mediasource.endOfStream();
+        }
+      } else {
+        this.#loadMediaData(this.#player_info.index);
+      }
+    }
   }
-  // 请求视频数据
-  /**
-   * 
-   * @param {Number} index 视频分段的 index
-   */
-  async #fetchMediaData(index) {
-    const start = index * this.#part_size;
-    const end = (index + 1) * this.#part_size;
+
+  // 加载视频
+  async #loadMediaData(index) {
+    if (this.#player_info.index >= this.part || this.#havaAllLoad()) {
+      return;
+    }
+    console.log('加载下一段视频')
+    const chunk = await this.#fetchMediaData(index);
+    this.#sourceBuffer.appendBuffer(chunk);
+    this.#media_load_status[index] = true;
+    this.#player_info.index = index + 1;
+  }
+
+  #fetchMediaData(index) {
+    // start 和 end 的计算很重要，有误差的话，视频的播放会接不上
+    const start = this.#player_info.start_bytes;
+    const end = start + this.#player_info.part_size;
     const xhr = new XMLHttpRequest();
-    xhr.open("get", this.#video_url);
+    xhr.open("get", this.url);
     xhr.responseType = "arraybuffer";
     xhr.setRequestHeader("Range", "bytes=" + start + "-" + end);
     return new Promise(res => {
-      xhr.onload = function () {
+      xhr.onload = () => {
+        this.#player_info.start_bytes += end - start + 1;
+        // 拼接数据
         res(xhr.response);
       };
       xhr.send();
     })
   }
-  // 播放事件监听 
-  async #playListener() {
-    // 是否已经完全加载完成
-    if (this.#haveAllLoad()) {
-      console.log('全部加载')
-      this.el.removeEventListener("timeupdate", this.#playListener);
-      this.#mediaSource.endOfStream();
-    } else {
-      if (this.#needLoadNext(this.#part_index)) {
-        console.log('加载下一段视频')
-        await this.#loadMediaData(this.#part_index + 1);
-      }
-    }
-  }
-  // 是否需要加载下一段视频
-  #needLoadNext(index) {
-    // if (index == (this.part_number - 1) || this.#sourceBuffer_load_status[index + 1]) {
-    //   return false;
-    // } else {
-      const loaded_duration = 0.5 * (index + 1) * this.#part_duration;
-      return this.el.currentTime > loaded_duration;
-    // }
-  }
+
   // 是否已经全部加载
-  #haveAllLoad() {
-    for (let index = 0; index < this.part_number; index++) {
-      const element = this.#sourceBuffer_load_status[index];
-      if (element) {
-        continue
-      } else {
-        return false;
-      }
-    }
-    return true;
+  #havaAllLoad() {
+    return this.#media_load_status.every(item => {
+      return !!item;
+    })
   }
 }
 
-export default Video;
+
+export default Video

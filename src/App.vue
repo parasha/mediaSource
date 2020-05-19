@@ -6,7 +6,9 @@
 
 <script>
 import { ref, onMounted } from "vue";
-import Video from './common/js/video';
+// import Video from './common/js/video';
+import Video from './common/js/asyncVideo';
+
 
 var assetURL = "./assets/frag_bunny.mp4";
 
