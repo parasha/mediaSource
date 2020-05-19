@@ -1,13 +1,16 @@
 <template>
   <div id="page">
-    <video ref="videoVNode" @click="play"></video>
+    <video ref="videoVNode" controls></video>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from "vue";
+
 // import Video from './common/js/video';
 import Video from "./common/js/asyncVideo";
+// import it ES6 style:
+import RxPlayer from "rx-player";
 
 var assetURL = "./assets/frag_bunny.mp4";
 
@@ -17,7 +20,19 @@ export default {
 
     let video = null;
     onMounted(() => {
-      video = new Video(videoVNode.value, assetURL);
+      // video = new Video(videoVNode.value, assetURL);
+      // instantiate it
+      const player = new RxPlayer({
+        videoElement: videoVNode.value,
+      });
+
+      // play a video
+      player.loadVideo({
+        url:
+          "http://vm2.dashif.org/livesim-dev/segtimeline_1/testpic_6s/Manifest.mpd",
+        transport: "dash",
+        autoPlay: true
+      });
     });
 
     const play = () => {
