@@ -38,7 +38,7 @@ class Video {
         this.#sourceBuffer = this.#mediasource.addSourceBuffer(this.mimeCodec);
         // 视频信息
         this.#media_info.size = await this.#getMediaBaaseInfo();
-        this.#player_info.part_size = this.#media_info.size / this.part;
+        this.#player_info.part_size = Math.round(this.#media_info.size / this.part);
         this.player.addEventListener('canplay', () => {
           this.#media_info.duration = this.player.duration;
           this.#player_info.part_duration = this.#media_info.duration / this.part;
@@ -121,6 +121,14 @@ class Video {
     return this.#media_load_status.every(item => {
       return !!item;
     })
+  }
+
+  // video 控制
+  play(){
+    this.player.play();
+  }
+  pause(){
+    this.player.pause();
   }
 }
 

@@ -1,14 +1,13 @@
 <template>
   <div id="page">
-    <video controls ref="videoVNode"></video>
+    <video ref="videoVNode" @click="play"></video>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from "vue";
 // import Video from './common/js/video';
-import Video from './common/js/asyncVideo';
-
+import Video from "./common/js/asyncVideo";
 
 var assetURL = "./assets/frag_bunny.mp4";
 
@@ -16,12 +15,22 @@ export default {
   setup() {
     const videoVNode = ref(null);
 
+    let video = null;
     onMounted(() => {
-      const video = new Video(videoVNode.value, assetURL);
+      video = new Video(videoVNode.value, assetURL);
     });
 
+    const play = () => {
+      if (video.player.paused) {
+        video.play();
+      } else {
+        video.pause();
+      }
+    };
+
     return {
-      videoVNode
+      videoVNode,
+      play
     };
   }
 };
