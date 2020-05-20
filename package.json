@@ -5,6 +5,7 @@
     "build": "webpack --config config/webpacl.config.js --env.prod"
   },
   "dependencies": {
+    "flv.js": "^1.5.0",
     "rx-player": "^3.20.1",
     "vue": "^3.0.0-beta.13"
   },

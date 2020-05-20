@@ -1,16 +1,18 @@
 <template>
   <div id="page">
     <video ref="videoVNode" controls></video>
+    <!-- <video controls src='http://vm2.dashif.org/livesim-dev/segtimeline_1/testpic_6s/Manifest.mpd'></video> -->
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from "vue";
-
+import './common/js/flv.min.js'; 
 // import Video from './common/js/video';
 import Video from "./common/js/asyncVideo";
 // import it ES6 style:
-import RxPlayer from "rx-player";
+// import RxPlayer from "rx-player";
+// import 'flv'
 
 var assetURL = "./assets/frag_bunny.mp4";
 
@@ -20,19 +22,18 @@ export default {
 
     let video = null;
     onMounted(() => {
-      // video = new Video(videoVNode.value, assetURL);
-      // instantiate it
-      const player = new RxPlayer({
-        videoElement: videoVNode.value,
-      });
+      video = videoVNode.value;
 
-      // play a video
-      player.loadVideo({
-        url:
-          "http://vm2.dashif.org/livesim-dev/segtimeline_1/testpic_6s/Manifest.mpd",
-        transport: "dash",
-        autoPlay: true
-      });
+      if (flvjs.isSupported()) {
+        var videoElement = video;
+        var flvPlayer = flvjs.createPlayer({
+          type: "flv",
+          url: 'http://fed.dev.hzmantu.com/oa-project/bce0c613e364122715270faef1874251.flv'
+        });
+        flvPlayer.attachMediaElement(videoElement);
+        flvPlayer.load();
+        flvPlayer.play();
+      }
     });
 
     const play = () => {
